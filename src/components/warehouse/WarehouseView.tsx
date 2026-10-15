@@ -16,13 +16,18 @@ import {
   MapPin, 
   Layers,
   CheckCircle,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ShoppingCart,
+  ShieldAlert,
+  AlertCircle
 } from 'lucide-react';
 import { useERP } from '../../context/ERPContext';
 import { InventoryItem, MovementType } from '../../types/erp';
 import { ItemModal } from './ItemModal';
 import { StockMovementModal } from './StockMovementModal';
 import { BarcodeModal } from './BarcodeModal';
+import { ReorderBanner } from './ReorderBanner';
+import { ReorderAlertModal } from './ReorderAlertModal';
 
 export const WarehouseView: React.FC = () => {
   const { 
@@ -44,6 +49,8 @@ export const WarehouseView: React.FC = () => {
   const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
   const [preselectedSku, setPreselectedSku] = useState<string | undefined>(undefined);
   const [barcodeItem, setBarcodeItem] = useState<InventoryItem | null>(null);
+  const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
+  const [reorderItem, setReorderItem] = useState<InventoryItem | null>(null);
 
   // Filtering inventory
   const filteredInventory = inventory.filter(item => {
@@ -54,7 +61,7 @@ export const WarehouseView: React.FC = () => {
       item.barcode.includes(searchTerm);
     const matchesCategory = categoryFilter === 'ALL' || item.category === categoryFilter;
     const matchesLocation = locationFilter === 'ALL' || item.locationId === locationFilter;
-    const matchesLowStock = !lowStockOnly || item.stockQuantity <= item.minSafetyStock;
+    const matchesLowStock = !lowStockOnly || item.stockQuantity <= item.reorderLevel;
 
     return matchesSearch && matchesCategory && matchesLocation && matchesLowStock;
   });
@@ -120,6 +127,17 @@ export const WarehouseView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => {
+              setReorderItem(null);
+              setIsReorderModalOpen(true);
+            }}
+            className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-emerald-900/30 transition-all cursor-pointer active:scale-95"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            ⚡ Restok ROP Kilat
+          </button>
+
           <button
             onClick={() => {
               setEditingItem(null);
@@ -195,6 +213,16 @@ export const WarehouseView: React.FC = () => {
       {/* SUB-TAB 1: INVENTORY CATALOG */}
       {subTab === 'inventory' && (
         <div className="space-y-4">
+          {/* Reorder Point Early Warning Banner */}
+          <ReorderBanner
+            onOpenRestockModal={(item) => {
+              setReorderItem(item || null);
+              setIsReorderModalOpen(true);
+            }}
+            onFilterLowStock={() => setLowStockOnly(!lowStockOnly)}
+            isFilterActive={lowStockOnly}
+          />
+
           {/* Filters & Search */}
           <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
             {/* Search Box */}
@@ -246,7 +274,7 @@ export const WarehouseView: React.FC = () => {
                 }`}
               >
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-                Hanya Stok Kritis
+                Hanya ROP / Kritis
               </button>
             </div>
           </div>
@@ -261,8 +289,8 @@ export const WarehouseView: React.FC = () => {
                     <th className="py-3 px-4">Nama Barang & Kategori</th>
                     <th className="py-3 px-4">Lokasi Rak / Bin</th>
                     <th className="py-3 px-4 text-right">Stok Fisik</th>
-                    <th className="py-3 px-4 text-right">Safety Stock</th>
-                    <th className="py-3 px-4 text-center">Status</th>
+                    <th className="py-3 px-4 text-right">Safety / ROP</th>
+                    <th className="py-3 px-4 text-center">Status ROP</th>
                     <th className="py-3 px-4 text-right">HPP (Cost)</th>
                     <th className="py-3 px-4 text-right">Total Nilai</th>
                     <th className="py-3 px-4 text-center">Aksi</th>
@@ -277,8 +305,9 @@ export const WarehouseView: React.FC = () => {
                     </tr>
                   ) : (
                     filteredInventory.map((item) => {
-                      const isLow = item.stockQuantity <= item.minSafetyStock;
                       const isZero = item.stockQuantity === 0;
+                      const isCritical = item.stockQuantity <= item.minSafetyStock;
+                      const isReorder = !isCritical && item.stockQuantity <= item.reorderLevel;
                       const totalVal = item.stockQuantity * item.unitCost;
                       const locCode = locations.find(l => l.id === item.locationId)?.code || item.locationId;
 
@@ -310,7 +339,9 @@ export const WarehouseView: React.FC = () => {
                           </td>
 
                           <td className="py-3 px-4 text-right">
-                            <span className="font-mono text-sm font-bold text-white">
+                            <span className={`font-mono text-sm font-bold ${
+                              isCritical ? 'text-rose-400 font-extrabold' : isReorder ? 'text-amber-400' : 'text-white'
+                            }`}>
                               {item.stockQuantity.toLocaleString()}
                             </span>
                             <span className="text-[10px] text-slate-400 ml-1 font-mono">
@@ -318,19 +349,23 @@ export const WarehouseView: React.FC = () => {
                             </span>
                           </td>
 
-                          <td className="py-3 px-4 text-right font-mono text-slate-400">
-                            {item.minSafetyStock.toLocaleString()} {item.unit}
+                          <td className="py-3 px-4 text-right font-mono text-xs">
+                            <span className="text-slate-400" title="Min Safety Stock">{item.minSafetyStock}</span>
+                            <span className="text-slate-600 mx-1">/</span>
+                            <span className="text-amber-400 font-bold" title="Reorder Point (ROP)">{item.reorderLevel} {item.unit}</span>
                           </td>
 
                           <td className="py-3 px-4 text-center">
                             <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                               isZero 
                                 ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' 
-                                : isLow 
-                                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse' 
+                                : isCritical 
+                                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse' 
+                                : isReorder 
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' 
                                 : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                             }`}>
-                              {isZero ? 'Habis' : isLow ? 'Stok Kritis' : 'Optimal'}
+                              {isZero ? 'Habis' : isCritical ? '🚨 Kritis' : isReorder ? '⚠️ Butuh ROP' : 'Optimal'}
                             </span>
                           </td>
 
@@ -344,6 +379,23 @@ export const WarehouseView: React.FC = () => {
 
                           <td className="py-3 px-4 text-center">
                             <div className="flex items-center justify-center gap-1">
+                              {/* Quick Restock / PO */}
+                              <button
+                                onClick={() => {
+                                  setReorderItem(item);
+                                  setIsReorderModalOpen(true);
+                                }}
+                                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                  isCritical 
+                                    ? 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 animate-pulse' 
+                                    : isReorder 
+                                    ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300' 
+                                    : 'hover:bg-slate-700 text-slate-400 hover:text-white'
+                                }`}
+                                title="⚡ Restok Kilat / Buat PO (ROP)"
+                              >
+                                <ShoppingCart className="w-3.5 h-3.5" />
+                              </button>
                               {/* Quick Movement */}
                               <button
                                 onClick={() => {
@@ -610,6 +662,16 @@ export const WarehouseView: React.FC = () => {
         isOpen={!!barcodeItem}
         onClose={() => setBarcodeItem(null)}
         item={barcodeItem}
+      />
+
+      {/* Reorder Point Restock / PO Modal */}
+      <ReorderAlertModal
+        isOpen={isReorderModalOpen}
+        onClose={() => {
+          setIsReorderModalOpen(false);
+          setReorderItem(null);
+        }}
+        targetItem={reorderItem}
       />
     </div>
   );

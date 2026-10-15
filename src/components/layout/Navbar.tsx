@@ -11,17 +11,18 @@ import {
 } from 'lucide-react';
 import { useERP } from '../../context/ERPContext';
 import { UserRole } from '../../types/erp';
+import { getROPSummary } from '../../utils/reorderAlerts';
 
 interface NavbarProps {
   onOpenKiosk: () => void;
+  onOpenROPAlerts: () => void;
   onOpenSearch?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenKiosk }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOpenKiosk, onOpenROPAlerts }) => {
   const { 
     currentRole, 
     setCurrentRole, 
-    notifications, 
     resetToDefaultData,
     inventory,
     attendance
@@ -34,7 +35,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenKiosk }) => {
     return () => clearInterval(timer);
   }, []);
 
-  const lowStockCount = inventory.filter(i => i.stockQuantity <= i.minSafetyStock).length;
+  const ropSummary = getROPSummary(inventory);
   const presentEmployeesToday = attendance.filter(a => a.status === 'PRESENT' || a.status === 'LATE').length;
 
   return (
@@ -75,18 +76,55 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenKiosk }) => {
           <span className="text-slate-300">Plant Status: <strong className="text-emerald-400 font-semibold">Active Run</strong></span>
         </div>
 
-        {lowStockCount > 0 && (
+        {ropSummary.totalAlerts > 0 && (
           <>
             <div className="w-px h-3.5 bg-slate-800" />
-            <div className="flex items-center gap-1 text-amber-400 font-medium">
-              <span>⚠️ {lowStockCount} SKU Kritis</span>
-            </div>
+            <button
+              onClick={onOpenROPAlerts}
+              className={`flex items-center gap-1.5 font-medium transition-all cursor-pointer px-2 py-0.5 rounded-full ${
+                ropSummary.criticalCount > 0 
+                  ? 'bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30' 
+                  : 'bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/30'
+              }`}
+            >
+              <span>{ropSummary.criticalCount > 0 ? '🚨' : '⚠️'}</span>
+              <span>
+                {ropSummary.criticalCount > 0 ? `${ropSummary.criticalCount} Bahan Kritis` : `${ropSummary.warningCount} Reorder Point`}
+              </span>
+            </button>
           </>
         )}
       </div>
 
       {/* Right Controls */}
       <div className="flex items-center gap-2.5">
+        {/* Reorder Point Notification Bell */}
+        <button
+          onClick={onOpenROPAlerts}
+          className={`relative p-2 rounded-xl border transition-all cursor-pointer ${
+            ropSummary.criticalCount > 0
+              ? 'bg-rose-500/10 border-rose-500/40 text-rose-300 hover:bg-rose-500/20'
+              : ropSummary.warningCount > 0
+                ? 'bg-amber-500/10 border-amber-500/40 text-amber-300 hover:bg-amber-500/20'
+                : 'bg-slate-800/80 border-slate-700/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+          }`}
+          title="Pusat Notifikasi Reorder Point (Bahan Baku Kritis)"
+        >
+          <Bell className="w-4 h-4" />
+          {ropSummary.totalAlerts > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4">
+              {ropSummary.criticalCount > 0 && (
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+              )}
+              <span className={`relative inline-flex rounded-full h-4 w-4 text-[9px] font-extrabold items-center justify-center text-white ${
+                ropSummary.criticalCount > 0 ? 'bg-rose-600' : 'bg-amber-500'
+              }`}>
+                {ropSummary.totalAlerts}
+              </span>
+            </span>
+          )}
+        </button>
+
         {/* Attendance Kiosk Quick Launcher */}
         <button
           onClick={onOpenKiosk}

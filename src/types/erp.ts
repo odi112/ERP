@@ -37,6 +37,25 @@ export interface InventoryItem {
   lastUpdated: string;
 }
 
+export type ROPAlertLevel = 'CRITICAL' | 'WARNING' | 'HEALTHY';
+export type BakpaoMaterialType = 'TEPUNG' | 'RAGI' | 'ISIAN' | 'BUMBU_PENGEMBANG' | 'PACKAGING' | 'OTHER';
+
+export interface ReorderPointAlert {
+  item: InventoryItem;
+  alertLevel: ROPAlertLevel;
+  materialType: BakpaoMaterialType;
+  materialTypeLabel: string;
+  stockQuantity: number;
+  minSafetyStock: number;
+  reorderLevel: number;
+  deficitToSafety: number;
+  deficitToReorder: number;
+  recommendedOrderQty: number;
+  urgency: 'HIGH' | 'MEDIUM' | 'LOW';
+  estimatedDaysRemaining: number;
+  notes: string;
+}
+
 export type MovementType = 
   | 'INBOUND_RECEIPT' 
   | 'OUTBOUND_DISPATCH' 

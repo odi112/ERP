@@ -14,22 +14,28 @@ import {
   FileText,
   Activity,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  ShieldAlert
 } from 'lucide-react';
 import { useERP } from '../../context/ERPContext';
+import { ReorderPointWidget } from './ReorderPointWidget';
+import { InventoryItem } from '../../types/erp';
+import { getROPSummary } from '../../utils/reorderAlerts';
 
 interface DashboardOverviewProps {
   onOpenKiosk: () => void;
   onOpenNewWO: () => void;
   onOpenNewStockMovement: () => void;
   onOpenNewItem: () => void;
+  onOpenRestockModal?: (item?: InventoryItem) => void;
 }
 
 export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   onOpenKiosk,
   onOpenNewWO,
   onOpenNewStockMovement,
-  onOpenNewItem
+  onOpenNewItem,
+  onOpenRestockModal
 }) => {
   const { 
     inventory, 
@@ -46,6 +52,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   // Calculations
   const totalStockItems = inventory.reduce((acc, curr) => acc + curr.stockQuantity, 0);
   const totalAssetValue = inventory.reduce((acc, curr) => acc + (curr.stockQuantity * curr.unitCost), 0);
+  const ropSummary = getROPSummary(inventory);
   const criticalItems = inventory.filter(i => i.stockQuantity <= i.minSafetyStock);
   const activeWOs = workOrders.filter(w => w.status === 'IN_PROGRESS' || w.status === 'QUALITY_CHECK');
   
@@ -138,32 +145,44 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
         </div>
 
-        {/* KPI 2: Critical / Low Stock Alert */}
+        {/* KPI 2: Critical / Low Stock Alert with ROP Integration */}
         <div 
           onClick={() => setActiveTab('warehouse')}
           className={`border rounded-xl p-4.5 transition-all duration-200 cursor-pointer group shadow-sm ${
-            criticalItems.length > 0 
-              ? 'bg-amber-950/20 border-amber-800/40 hover:border-amber-500' 
-              : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
+            ropSummary.criticalCount > 0 
+              ? 'bg-rose-950/25 border-rose-800/60 hover:border-rose-500' 
+              : ropSummary.warningCount > 0
+                ? 'bg-amber-950/20 border-amber-800/40 hover:border-amber-500'
+                : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Peringatan Safety Stock</span>
-            <div className={`p-2 rounded-lg ${criticalItems.length > 0 ? 'bg-amber-500/20 text-amber-400 animate-pulse' : 'bg-slate-800 text-slate-400'}`}>
-              <AlertTriangle className="w-4 h-4" />
+            <span className="text-xs font-medium text-slate-400">Reorder Point & Kritis</span>
+            <div className={`p-2 rounded-lg ${
+              ropSummary.criticalCount > 0 
+                ? 'bg-rose-500/20 text-rose-400 animate-pulse' 
+                : ropSummary.warningCount > 0 
+                  ? 'bg-amber-500/20 text-amber-400' 
+                  : 'bg-slate-800 text-slate-400'
+            }`}>
+              {ropSummary.criticalCount > 0 ? <AlertCircle className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
             </div>
           </div>
           <div className="mt-3">
             <div className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-baseline gap-2">
-              <span className={criticalItems.length > 0 ? 'text-amber-400' : 'text-emerald-400'}>
-                {criticalItems.length}
+              <span className={ropSummary.criticalCount > 0 ? 'text-rose-400 font-extrabold' : ropSummary.warningCount > 0 ? 'text-amber-400' : 'text-emerald-400'}>
+                {ropSummary.criticalCount > 0 ? `${ropSummary.criticalCount} Kritis` : `${ropSummary.warningCount} ROP`}
               </span>
-              <span className="text-xs text-slate-400 font-normal">SKU butuh reorder</span>
+              <span className="text-xs text-slate-400 font-normal">
+                ({ropSummary.totalAlerts} butuh reorder)
+              </span>
             </div>
             <div className="text-xs text-slate-400 mt-1.5 truncate">
-              {criticalItems.length > 0 
-                ? `Kritis: ${criticalItems.map(i => i.sku).slice(0, 2).join(', ')}${criticalItems.length > 2 ? '...' : ''}` 
-                : 'Semua level stok di atas batas aman.'}
+              {ropSummary.criticalCount > 0 
+                ? `🚨 Tepung/Ragi/Isian: ${ropSummary.alerts.slice(0, 2).map(a => a.item.name.split(' ')[0]).join(', ')}` 
+                : ropSummary.warningCount > 0
+                  ? 'Beberapa bahan mendekati batas ROP.'
+                  : 'Seluruh bahan baku di atas batas aman.'}
             </div>
           </div>
         </div>
@@ -217,6 +236,12 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Dedicated Reorder Point (ROP) Notification & Early Warning System */}
+      <ReorderPointWidget 
+        onOpenRestockModal={(item) => onOpenRestockModal?.(item)} 
+        onNavigateToWarehouse={() => setActiveTab('warehouse')} 
+      />
 
       {/* Main Dual Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

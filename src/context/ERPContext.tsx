@@ -78,12 +78,14 @@ interface ERPContextType {
   submitLeaveRequest: (request: Omit<LeaveRequest, 'id' | 'appliedDate' | 'status'>) => void;
   updateLeaveStatus: (leaveId: string, status: 'APPROVED' | 'REJECTED', approverName: string) => void;
   quickCheckInByPin: (pin: string) => { success: boolean; message: string; employee?: Employee };
+  quickRestockItem: (sku: string, quantity: number, supplierName?: string, poNumber?: string, notes?: string) => boolean;
+  simulateConsumptionROP: (categoryType?: 'TEPUNG' | 'RAGI' | 'ISIAN') => void;
 
   // Utilities
   resetToDefaultData: () => void;
 }
 
-const STORAGE_KEY = 'apex_erp_master_storage_v2_bakpao';
+const STORAGE_KEY = 'apex_erp_master_storage_v3_rop_bakpao';
 
 const ERPContext = createContext<ERPContextType | undefined>(undefined);
 
@@ -252,20 +254,23 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
+    // Check for Reorder Point / Critical Safety Stock breach
+    let finalQty = targetItem.stockQuantity;
+    if (data.type === 'INBOUND_RECEIPT' || data.type === 'PRODUCTION_RECEIPT') {
+      finalQty += data.quantity;
+    } else if (data.type === 'OUTBOUND_DISPATCH' || data.type === 'PRODUCTION_ISSUE') {
+      finalQty -= data.quantity;
+    } else if (data.type === 'STOCK_ADJUSTMENT') {
+      finalQty = data.quantity;
+    }
+    finalQty = Math.max(0, finalQty);
+
     // Update stock quantity
     setInventory(prev => prev.map(item => {
       if (item.sku === data.sku) {
-        let newQty = item.stockQuantity;
-        if (data.type === 'INBOUND_RECEIPT' || data.type === 'PRODUCTION_RECEIPT') {
-          newQty += data.quantity;
-        } else if (data.type === 'OUTBOUND_DISPATCH' || data.type === 'PRODUCTION_ISSUE') {
-          newQty -= data.quantity;
-        } else if (data.type === 'STOCK_ADJUSTMENT') {
-          newQty = data.quantity; // direct adjustment
-        }
         return {
           ...item,
-          stockQuantity: Math.max(0, newQty),
+          stockQuantity: finalQty,
           lastUpdated: new Date().toLocaleString()
         };
       }
@@ -281,7 +286,111 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setMovements(prev => [newMovement, ...prev]);
 
     showNotification('success', 'Pergerakan Stok Tercatat', `${data.type} sebanyak ${data.quantity} ${data.unit} (${data.sku}) sukses.`);
+
+    // Automated Notification Triggers for Reorder Point & Critical Level
+    if (['OUTBOUND_DISPATCH', 'PRODUCTION_ISSUE', 'STOCK_ADJUSTMENT'].includes(data.type)) {
+      if (finalQty <= targetItem.minSafetyStock) {
+        setTimeout(() => {
+          showNotification(
+            'error',
+            `🚨 LEVEL KRITIS: ${targetItem.name}`,
+            `Sisa stok: ${finalQty} ${targetItem.unit} (Di bawah Safety Stock ${targetItem.minSafetyStock} ${targetItem.unit})! Bahaya lini adonan & molding bakpao terhenti.`
+          );
+        }, 300);
+      } else if (finalQty <= targetItem.reorderLevel) {
+        setTimeout(() => {
+          showNotification(
+            'warning',
+            `⚠️ REORDER POINT: ${targetItem.name}`,
+            `Sisa stok: ${finalQty} ${targetItem.unit} (Mencapai batas ROP ${targetItem.reorderLevel} ${targetItem.unit}). Segera terbitkan Purchase Order ke supplier.`
+          );
+        }, 300);
+      }
+    }
+
     return true;
+  };
+
+  // Quick Restock / Instant PO fulfillment for Reorder Point
+  const quickRestockItem = (
+    sku: string, 
+    quantity: number, 
+    supplierName = 'Supplier Resmi Bahan Bakpao', 
+    poNumber?: string, 
+    notes?: string
+  ): boolean => {
+    const targetItem = inventory.find(i => i.sku === sku);
+    if (!targetItem) {
+      showNotification('error', 'Gagal Restok', `SKU ${sku} tidak ditemukan.`);
+      return false;
+    }
+
+    const autoPO = poNumber || `PO-ROP-${Date.now().toString().slice(-6)}`;
+    const newQty = targetItem.stockQuantity + quantity;
+
+    setInventory(prev => prev.map(item => {
+      if (item.sku === sku) {
+        return {
+          ...item,
+          stockQuantity: newQty,
+          lastUpdated: new Date().toLocaleString()
+        };
+      }
+      return item;
+    }));
+
+    const newMovement: StockMovement = {
+      id: `MOV-PO-${Date.now()}`,
+      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 16),
+      type: 'INBOUND_RECEIPT',
+      sku: targetItem.sku,
+      itemName: targetItem.name,
+      quantity,
+      unit: targetItem.unit,
+      fromLocation: supplierName,
+      toLocation: targetItem.locationId,
+      referenceDoc: autoPO,
+      operatorName: 'Warehouse / Procurement Officer',
+      notes: notes || `Restok Purchase Order ${autoPO} untuk menjaga batas aman Reorder Point.`
+    };
+    setMovements(prev => [newMovement, ...prev]);
+
+    showNotification(
+      'success',
+      `Restok Berhasil (${autoPO})`,
+      `+${quantity} ${targetItem.unit} ${targetItem.name} berhasil diterima. Stok fisik kini aman: ${newQty} ${targetItem.unit} (di atas batas ROP ${targetItem.reorderLevel} ${targetItem.unit}).`
+    );
+    return true;
+  };
+
+  // Interactive simulation to trigger ROP alerts for testing/demo
+  const simulateConsumptionROP = (categoryType: 'TEPUNG' | 'RAGI' | 'ISIAN' = 'RAGI') => {
+    let targetSku = 'RAW-RGI-INST';
+    let deductQty = 4;
+
+    if (categoryType === 'TEPUNG') {
+      targetSku = 'RAW-TPG-PAO';
+      deductQty = 1750; // drops from 2450 to 700 (below reorderLevel 800)
+    } else if (categoryType === 'ISIAN') {
+      targetSku = 'FIL-CHOC-LUMER';
+      deductQty = 50; // drops to critical level
+    }
+
+    const item = inventory.find(i => i.sku === targetSku);
+    if (!item) return;
+
+    recordStockMovement({
+      type: 'PRODUCTION_ISSUE',
+      sku: item.sku,
+      itemName: item.name,
+      quantity: deductQty,
+      unit: item.unit,
+      fromLocation: item.locationId,
+      toLocation: 'LINE-MOLDING-01',
+      referenceDoc: `SIM-PROD-${Date.now().toString().slice(-4)}`,
+      operatorName: 'Simulasi Sistem Produksi',
+      notes: `Simulasi otomatis konsumsi bahan baku ${categoryType} untuk menguji peringatan Reorder Point.`
+    });
   };
 
   // --- PRODUCTION LOGIC ---
@@ -408,6 +517,32 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return w;
     }));
+
+    // Check components for safety stock / ROP breach after deduction
+    bom.components.forEach((comp, idx) => {
+      const invItem = inventory.find(i => i.sku === comp.componentSku);
+      if (invItem) {
+        const totalNeeded = comp.quantityNeeded * wo.targetQuantity;
+        const remaining = Math.max(0, invItem.stockQuantity - totalNeeded);
+        if (remaining <= invItem.minSafetyStock) {
+          setTimeout(() => {
+            showNotification(
+              'error',
+              `🚨 LEVEL KRITIS: ${comp.componentName}`,
+              `Sisa stok: ${remaining} ${comp.unit} (Di bawah Safety Stock ${invItem.minSafetyStock} ${comp.unit}) setelah dialokasikan ke SPK ${wo.woNumber}. Segera reorder!`
+            );
+          }, 350 + (idx * 250));
+        } else if (remaining <= invItem.reorderLevel) {
+          setTimeout(() => {
+            showNotification(
+              'warning',
+              `⚠️ REORDER POINT: ${comp.componentName}`,
+              `Sisa stok: ${remaining} ${comp.unit} (Mencapai batas ROP ${invItem.reorderLevel} ${comp.unit}) setelah dialokasikan ke SPK ${wo.woNumber}.`
+            );
+          }, 350 + (idx * 250));
+        }
+      }
+    });
 
     showNotification('success', 'Material Berhasil Dikeluarkan', `Semua komponen BOM untuk SPK ${wo.woNumber} telah dialokasikan ke lini produksi.`);
     return { success: true, message: 'Bahan baku berhasil dikeluarkan.' };
@@ -783,6 +918,8 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         submitLeaveRequest,
         updateLeaveStatus,
         quickCheckInByPin,
+        quickRestockItem,
+        simulateConsumptionROP,
 
         resetToDefaultData
       }}

@@ -83,7 +83,7 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
     name: 'Tepung Tang Mien / Wheat Starch (Tekstur Halus Putih)',
     category: 'Bahan Baku Tepung',
     unit: 'kg',
-    stockQuantity: 420,
+    stockQuantity: 215, // Reorder Point warning: <= 250kg
     minSafetyStock: 150,
     reorderLevel: 250,
     unitCost: 24000,
@@ -92,7 +92,7 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
     binLocation: 'RACK-A2-BIN-04',
     barcode: '899300100102',
     batchNumber: 'LOT-TGM-2609C',
-    lastUpdated: '2026-10-14 14:15'
+    lastUpdated: '2026-10-15 06:15'
   },
 
   // 2. Bahan Pengembang, Pemanis & Pelembut
@@ -102,7 +102,7 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
     name: 'Ragi Instan Saf-Instant Gold Label (Yeast Bakery Grade)',
     category: 'Bahan Pengembang & Bumbu',
     unit: 'kg',
-    stockQuantity: 65,
+    stockQuantity: 14, // 🚨 CRITICAL LEVEL: below minSafetyStock (20kg)
     minSafetyStock: 20,
     reorderLevel: 30,
     unitCost: 85000,
@@ -153,7 +153,7 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
     name: 'Baking Powder Double Acting (Food Grade)',
     category: 'Bahan Pengembang & Bumbu',
     unit: 'kg',
-    stockQuantity: 55, // Low stock alert
+    stockQuantity: 46, // 🚨 CRITICAL LEVEL: below minSafetyStock (60kg)
     minSafetyStock: 60,
     reorderLevel: 80,
     unitCost: 68000,
@@ -172,7 +172,7 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
     name: 'Pasta Cokelat Lumer Bakery Grade (Dark Choco Lava Filling)',
     category: 'Bahan Isian (Filling)',
     unit: 'kg',
-    stockQuantity: 480,
+    stockQuantity: 165, // Reorder warning: <= 180kg
     minSafetyStock: 120,
     reorderLevel: 180,
     unitCost: 48000,
@@ -189,7 +189,7 @@ export const INITIAL_INVENTORY: InventoryItem[] = [
     name: 'Daging Ayam Cincang Olahan Bumbu Kecap Gurih Wangi',
     category: 'Bahan Isian (Filling)',
     unit: 'kg',
-    stockQuantity: 310,
+    stockQuantity: 62, // 🚨 CRITICAL LEVEL: below minSafetyStock (80kg)
     minSafetyStock: 80,
     reorderLevel: 120,
     unitCost: 58000,
