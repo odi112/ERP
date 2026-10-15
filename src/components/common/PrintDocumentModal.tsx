@@ -47,9 +47,9 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({ isOpen, 
             {/* Header */}
             <div className="border-b-2 border-slate-900 pb-4 mb-6 flex justify-between items-start">
               <div>
-                <div className="text-xl font-black tracking-tight text-slate-950">PT. APEX INDUSTRIAL DYNAMICS</div>
-                <div className="text-xs text-slate-600">Plant Kawasan Industri KIIC Blok A-12, Karawang, Jawa Barat</div>
-                <div className="text-xs text-slate-500 mt-1">Telp: (021) 8990-4400 • Email: plant@apex.io</div>
+                <div className="text-xl font-black tracking-tight text-slate-950">PT. APEX BAKPAO NUSANTARA</div>
+                <div className="text-xs text-slate-600">Pabrik Pengolahan Makanan & Produksi Bakpao Mini Frozen • Kawasan Industri KIIC Karawang</div>
+                <div className="text-xs text-slate-500 mt-1">Sertifikasi Halal & BPOM RI • Telp: (021) 8990-4400 • Email: bakery@apex.io</div>
               </div>
               <div className="text-right">
                 <span className="text-xs uppercase font-extrabold px-2.5 py-1 bg-slate-900 text-white rounded">

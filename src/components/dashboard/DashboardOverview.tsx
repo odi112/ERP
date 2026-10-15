@@ -69,15 +69,15 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div>
-            <div className="flex items-center gap-2 text-indigo-400 text-xs font-semibold tracking-wider uppercase mb-1">
+            <div className="flex items-center gap-2 text-amber-400 text-xs font-semibold tracking-wider uppercase mb-1">
               <Factory className="w-4 h-4" />
-              Pusat Kendali Pabrik & Operasional Terpadu
+              Pusat Kendali Pabrik Bakpao Mini Terpadu
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Sistem ERP Terintegrasi
+              Sistem ERP Pabrik Bakpao Mini
             </h1>
             <p className="text-slate-400 text-sm mt-1 max-w-xl">
-              Monitoring real-time database stok gudang multi-lokasi, jadwal & eksekusi produksi (MES/BOM), serta presensi karyawan pabrik.
+              Monitoring real-time gudang tepung & cold storage, alokasi resep BOM, lini mesin mixer, doughbreak, molding 1 & 2, serta absensi karyawan pabrik.
             </p>
           </div>
 

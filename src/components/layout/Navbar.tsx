@@ -46,13 +46,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenKiosk }) => {
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-extrabold text-lg tracking-tight text-white">Apex<span className="text-indigo-400">ERP</span></span>
-            <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">
-              Smart Factory v4.2
+            <span className="font-extrabold text-lg tracking-tight text-white">Apex<span className="text-amber-400">Bakery</span></span>
+            <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full">
+              Pabrik Bakpao Mini
             </span>
           </div>
           <p className="text-xs text-slate-400 hidden sm:block">
-            Warehouse DB • Manufacturing MES • Attendance HR
+            Gudang Tepung & Cold Storage • Lini Mixer, Doughbreak & Molding • Absensi
           </p>
         </div>
       </div>

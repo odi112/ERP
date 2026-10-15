@@ -139,12 +139,12 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, editItem 
                 onChange={(e) => setCategory(e.target.value as any)}
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:border-indigo-500 focus:outline-none"
               >
-                <option value="Raw Material">Raw Material (Bahan Baku)</option>
-                <option value="Electronic Component">Electronic Component</option>
-                <option value="Mechanical Part">Mechanical Part</option>
-                <option value="Sub-Assembly">Sub-Assembly (WIP)</option>
-                <option value="Finished Good">Finished Good (Barang Jadi)</option>
-                <option value="Packaging">Packaging & Label</option>
+                <option value="Bahan Baku Tepung">Bahan Baku Tepung (Flour)</option>
+                <option value="Bahan Isian (Filling)">Bahan Isian (Filling / Pasta)</option>
+                <option value="Bahan Pengembang & Bumbu">Bahan Pengembang & Bumbu</option>
+                <option value="Sub-Assembly Adonan">Sub-Assembly Adonan (WIP)</option>
+                <option value="Finished Good">Finished Good (Bakpao Frozen)</option>
+                <option value="Packaging & Kemasan">Packaging & Kemasan</option>
               </select>
             </div>
           </div>
@@ -156,7 +156,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, editItem 
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Contoh: Stainless Steel Sheet 2.0mm SUS304"
+              placeholder="Contoh: Tepung Terigu Khusus Bakpao 25kg"
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:border-indigo-500 focus:outline-none"
             />
           </div>
@@ -169,12 +169,13 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, editItem 
                 onChange={(e) => setUnit(e.target.value as any)}
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:border-indigo-500 focus:outline-none"
               >
-                <option value="pcs">Pcs (Satuan)</option>
                 <option value="kg">Kilogram (kg)</option>
-                <option value="meter">Meter (m)</option>
-                <option value="box">Box / Dus</option>
-                <option value="drum">Drum / Tabung</option>
-                <option value="set">Set</option>
+                <option value="gram">Gram (g)</option>
+                <option value="pack">Pack / Bungkus</option>
+                <option value="lembar">Lembar (Kertas Alas)</option>
+                <option value="box">Box / Karton</option>
+                <option value="sak">Sak (25kg)</option>
+                <option value="pcs">Pcs (Satuan)</option>
               </select>
             </div>
 

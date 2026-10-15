@@ -16,8 +16,15 @@ export interface InventoryItem {
   id: string;
   sku: string;
   name: string;
-  category: 'Raw Material' | 'Electronic Component' | 'Mechanical Part' | 'Sub-Assembly' | 'Finished Good' | 'Packaging';
-  unit: 'pcs' | 'kg' | 'meter' | 'box' | 'drum' | 'set';
+  category: 
+    | 'Bahan Baku Tepung' 
+    | 'Bahan Isian (Filling)' 
+    | 'Bahan Pengembang & Bumbu' 
+    | 'Sub-Assembly Adonan' 
+    | 'Finished Good' 
+    | 'Packaging & Kemasan'
+    | string;
+  unit: 'pack' | 'kg' | 'gram' | 'pcs' | 'box' | 'sak' | 'lembar' | string;
   stockQuantity: number;
   minSafetyStock: number;
   reorderLevel: number;

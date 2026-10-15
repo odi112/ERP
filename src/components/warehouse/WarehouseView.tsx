@@ -217,12 +217,12 @@ export const WarehouseView: React.FC = () => {
                 className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none cursor-pointer"
               >
                 <option value="ALL">Semua Kategori</option>
-                <option value="Raw Material">Raw Material</option>
-                <option value="Electronic Component">Electronic Component</option>
-                <option value="Mechanical Part">Mechanical Part</option>
-                <option value="Sub-Assembly">Sub-Assembly</option>
-                <option value="Finished Good">Finished Good</option>
-                <option value="Packaging">Packaging</option>
+                <option value="Bahan Baku Tepung">Bahan Baku Tepung</option>
+                <option value="Bahan Isian (Filling)">Bahan Isian (Filling / Pasta)</option>
+                <option value="Bahan Pengembang & Bumbu">Bahan Pengembang & Bumbu</option>
+                <option value="Sub-Assembly Adonan">Sub-Assembly Adonan</option>
+                <option value="Finished Good">Finished Good (Bakpao Frozen)</option>
+                <option value="Packaging & Kemasan">Packaging & Kemasan</option>
               </select>
 
               <select

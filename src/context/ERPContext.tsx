@@ -83,7 +83,7 @@ interface ERPContextType {
   resetToDefaultData: () => void;
 }
 
-const STORAGE_KEY = 'apex_erp_master_storage_v1';
+const STORAGE_KEY = 'apex_erp_master_storage_v2_bakpao';
 
 const ERPContext = createContext<ERPContextType | undefined>(undefined);
 
@@ -115,32 +115,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [workCenters, setWorkCenters] = useState<WorkCenter[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_workcenters`);
-    if (saved) {
-      try {
-        const parsed: WorkCenter[] = JSON.parse(saved);
-        return parsed.map((wc, index) => {
-          if (wc.id === 'WC-CNC-01' || index === 0) {
-            return { ...wc, name: 'Mesin Molding 1', code: 'MACH-MOLD-01' };
-          }
-          if (wc.id === 'WC-SMD-01' || index === 1) {
-            return { ...wc, name: 'Mesin Molding 2', code: 'MACH-MOLD-02' };
-          }
-          if (wc.id === 'WC-WELD-01' || index === 2) {
-            return { ...wc, name: 'Mesin Doughbreak 1', code: 'MACH-DB-01' };
-          }
-          if (wc.id === 'WC-QC-01' || index === 3) {
-            return { ...wc, name: 'Mesin Mixer 1', code: 'MACH-MIX-01' };
-          }
-          if (wc.id === 'WC-PACK-01' || index === 4) {
-            return { ...wc, name: 'Mesin Mixer 2', code: 'MACH-MIX-02' };
-          }
-          return wc;
-        });
-      } catch {
-        return INITIAL_WORK_CENTERS;
-      }
-    }
-    return INITIAL_WORK_CENTERS;
+    return saved ? JSON.parse(saved) : INITIAL_WORK_CENTERS;
   });
 
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(() => {
