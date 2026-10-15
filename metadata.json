@@ -1,0 +1,6 @@
+{
+  "name": "ApexERP - Warehouse, Production & Attendance System",
+  "description": "Comprehensive Enterprise Resource Planning system integrating multi-location warehouse inventory, BOM & manufacturing production planning, and employee attendance & shift management.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
